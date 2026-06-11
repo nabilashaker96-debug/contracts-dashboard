@@ -75,7 +75,7 @@ body { background: #0f1117; color: #e2e8f0; font-family: 'Segoe UI', system-ui, 
 .pipeline-wrap { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
 .pip-pill { background: #1e2335; border: 1px solid #2a3050; border-radius: 10px; padding: 10px 14px; min-width: 78px; text-align: center; flex: 1; }
 .pip-val { font-size: 20px; font-weight: 800; }
-.pip-lbl { font-size: 9px; color: #6b7a9e; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
+.pip-lbl { font-size: 9px; color: #6b7a9e; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.04em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 .pip-pct { font-size: 10px; color: #6b7a9e; margin-top: 1px; }
 
 /* ── Charts ── */
@@ -331,7 +331,9 @@ function parse(rows) {
     const id = String(r['Order ID'] || '').trim();
     return /^\d{5,}/.test(id) || /^OR\d+/i.test(id);
   }).map(r => {
-    const crm = String(r['CRM Code'] || r['CRM Status'] || '').trim();
+    const crmCode = String(r['CRM Code'] || '').trim();
+    const crmStatus = String(r['CRM Status'] || '').trim();
+    const crm = crmStatus || crmCode; // prefer text status for display
     return {
       name:     String(r['Name'] || '').trim(),
       orderId:  String(r['Order ID'] || '').trim(),
@@ -339,9 +341,10 @@ function parse(rows) {
       status:   String(r['Contract Status'] || '').trim(),
       date:     String(r['Contract Date'] || '').trim(),
       crm,
+      crmCode,
       age:      parseInt(r['Contract Age (Days)']) || 0,
       aging:    normAging(String(r['Aging Category'] || '')),
-      safe:     SAFE_CRM.includes(crm)
+      safe:     SAFE_CRM.some(s => s.toLowerCase() === crmStatus.toLowerCase())
     };
   });
 }
@@ -483,7 +486,7 @@ function renderPipeline() {
   FILTERED.forEach(r => { if(r.crm) counts[r.crm] = (counts[r.crm]||0)+1; });
   document.getElementById('pipeline').innerHTML = CRM_ORDER.map(name => {
     const c = counts[name]||0, clr = CRM_CLR[name]||'#94a3b8';
-    return `<div class="pip-pill">
+    return `<div class="pip-pill" title="${name}">
       <div class="pip-val" style="color:${clr}">${c}</div>
       <div class="pip-lbl">${name}</div>
       <div class="pip-pct">${pct(c,n)}%</div>
