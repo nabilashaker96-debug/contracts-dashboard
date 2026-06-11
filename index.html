@@ -404,8 +404,11 @@ function renderKPIs() {
   const invoices= d.filter(r => r.status === 'فاتورة').length;
   const contracts=d.filter(r => r.status !== 'فاتورة').length;
   const delivered=d.filter(r => r.status === 'تم التسليم').length;
-  const inDel   = d.filter(r => r.status === 'قيد التسليم').length;
-  const designers=[...new Set(d.map(r=>r.designer).filter(Boolean))].sort();
+  const inDelContracts = d.filter(r => r.status === 'قيد التسليم');
+  const inDel = inDelContracts.length;
+  const delByDesigner = {};
+  inDelContracts.forEach(r => { if(r.designer) delByDesigner[r.designer] = (delByDesigner[r.designer]||0)+1; });
+  const designers = Object.keys(delByDesigner).sort();
 
   // Row 1
   document.getElementById('row1').innerHTML = `
@@ -471,7 +474,7 @@ function renderKPIs() {
       <div style="font-size:10px;color:#6b7a9e;margin-top:10px;letter-spacing:0.06em;text-transform:uppercase">BREAKDOWN BY DESIGNER</div>
       <select class="des-sel">
         <option>— Select designer —</option>
-        ${designers.map(d=>`<option>${d}</option>`).join('')}
+        ${designers.map(d=>`<option>${d} (${delByDesigner[d]})</option>`).join('')}
       </select>
     </div>
   `;
