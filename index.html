@@ -305,7 +305,7 @@ function checkPw() {
 function loadData() {
   document.getElementById('loadingBar').style.display = 'block';
   document.getElementById('content').style.display = 'none';
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/pub?output=csv&gid=${GID}&t=${Date.now()}`;
+  const url = `https://docs.google.com/spreadsheets/d/e/2PACX-1vRDlHhCbMO-evGhNLuzXbq66j18meRoGr5fxa-cqu-6KBHO-d-uVJ5zLOv_Lnw2TiU0PVBmRG5nXi2a/pub?gid=${GID}&single=true&output=csv&t=${Date.now()}`;
   Papa.parse(url, {
     download: true, header: true, skipEmptyLines: true,
     complete(res) {
