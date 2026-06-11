@@ -327,6 +327,18 @@ function loadData() {
 }
 
 function parse(rows) {
+  if (rows.length > 0) {
+    console.log('CSV columns:', Object.keys(rows[0]));
+    const sample = rows.find(r => {
+      const keys = Object.keys(r);
+      return keys.some(k => k.toLowerCase().includes('crm'));
+    });
+    if (sample) {
+      const crmKeys = Object.keys(sample).filter(k => k.toLowerCase().includes('crm'));
+      console.log('CRM columns found:', crmKeys);
+      crmKeys.forEach(k => console.log(`  ${k} =`, sample[k]));
+    }
+  }
   return rows.filter(r => {
     const id = String(r['Order ID'] || '').trim();
     return /^\d{5,}/.test(id) || /^OR\d+/i.test(id);
