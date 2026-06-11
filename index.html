@@ -327,7 +327,7 @@ function parse(rows) {
     const id = String(r['Order ID'] || '').trim();
     return /^\d{5,}/.test(id) || /^OR\d+/i.test(id);
   }).map(r => {
-    const crm = String(r['CRM Status'] || '').trim();
+    const crm = String(r['CRM Code'] || r['CRM Status'] || '').trim();
     return {
       name:     String(r['Name'] || '').trim(),
       orderId:  String(r['Order ID'] || '').trim(),
