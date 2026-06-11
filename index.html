@@ -344,7 +344,7 @@ function parse(rows) {
       crmCode,
       age:      parseInt(r['Contract Age (Days)']) || 0,
       aging:    normAging(String(r['Aging Category'] || '')),
-      safe:     SAFE_CRM.some(s => s.toLowerCase() === crmStatus.toLowerCase())
+      safe:     SAFE_CRM.some(s => s.toLowerCase() === crmStatus.toLowerCase() || s.toLowerCase() === crmCode.toLowerCase())
     };
   });
 }
