@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contracts Follow-up Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0f1117; color: #e2e8f0; font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+
+/* ── Password Screen ── */
+.pw-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+.pw-card { background: #1e2335; border: 1px solid #2a3050; border-radius: 16px; padding: 40px 36px; width: 340px; text-align: center; }
+.pw-logo { font-size: 20px; font-weight: 800; letter-spacing: 0.05em; color: #e2e8f0; margin-bottom: 6px; }
+.pw-sub { color: #6b7a9e; font-size: 13px; margin-bottom: 28px; }
+.pw-input { width: 100%; background: #181c27; border: 1px solid #2a3050; border-radius: 10px; padding: 12px 16px; color: #e2e8f0; font-size: 15px; outline: none; text-align: center; letter-spacing: 3px; margin-bottom: 14px; font-family: inherit; transition: border-color 0.2s; }
+.pw-input:focus { border-color: #4f8ef7; }
+.pw-btn { width: 100%; background: #4f8ef7; border: none; border-radius: 10px; padding: 12px; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; transition: background 0.2s; }
+.pw-btn:hover { background: #6ba3ff; }
+.pw-error { color: #ef4444; font-size: 12px; margin-top: 10px; display: none; }
+
+/* ── Dashboard Layout ── */
+.dash { padding: 20px 24px; display: none; }
+
+/* ── Header ── */
+.header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 10px; }
+.header-left { display: flex; align-items: center; gap: 10px; }
+.logo-tag { font-size: 12px; font-weight: 800; letter-spacing: 0.12em; color: #6b7a9e; text-transform: uppercase; }
+.logo-div { width: 1px; height: 22px; background: #2a3050; }
+.header-title { font-size: 17px; font-weight: 700; color: #e2e8f0; }
+.header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.search-inp { background: #1e2335; border: 1px solid #2a3050; border-radius: 8px; padding: 7px 13px; color: #e2e8f0; font-size: 12px; width: 210px; outline: none; font-family: inherit; }
+.search-inp::placeholder { color: #6b7a9e; }
+.lbl { font-size: 11px; color: #6b7a9e; }
+.month-sel { background: #1e2335; border: 1px solid #2a3050; border-radius: 8px; padding: 7px 12px; color: #e2e8f0; font-size: 12px; outline: none; font-family: inherit; cursor: pointer; }
+.updated-lbl { font-size: 11px; color: #6b7a9e; white-space: nowrap; }
+.refresh-btn { background: transparent; border: 1px solid #34d399; color: #34d399; border-radius: 8px; padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; transition: background 0.2s; white-space: nowrap; }
+.refresh-btn:hover { background: #34d39918; }
+.loading-bar { text-align: center; padding: 60px; color: #6b7a9e; font-size: 14px; }
+
+/* ── KPI Cards ── */
+.kpi-row { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.kpi { background: #1e2335; border: 1px solid #2a3050; border-radius: 12px; padding: 15px 18px; flex: 1; min-width: 120px; }
+.kpi-lbl { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: #6b7a9e; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; }
+.kpi-val { font-size: 30px; font-weight: 800; line-height: 1; }
+.kpi-sub { font-size: 11px; color: #94a3b8; margin-top: 5px; }
+.kpi-link { font-size: 11px; color: #4f8ef7; margin-top: 4px; cursor: pointer; }
+.dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; }
+
+/* Safe Zone KPI */
+.kpi-safe { background: #071a10; border: 1px solid #1a4a2a; border-left: 3px solid #34d399 !important; }
+.kpi-safe .kpi-lbl { color: #34d399; }
+.kpi-safe .kpi-val { color: #34d399; }
+.kpi-safe .kpi-sub { color: #34d39988; }
+
+/* Accent borders */
+.bl-blue  { border-left: 3px solid #4f8ef7; }
+.bl-red   { border-left: 3px solid #ef4444; }
+.bl-ora   { border-left: 3px solid #f97316; }
+.bl-grn   { border-left: 3px solid #34d399; }
+.bl-pur   { border-left: 3px solid #a78bfa; }
+.bl-cyan  { border-left: 3px solid #22d3ee; }
+.bl-yel   { border-left: 3px solid #fbbf24; }
+
+/* ── Split Cards Row ── */
+.split-row { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.big-card { background: #1e2335; border: 1px solid #2a3050; border-radius: 12px; padding: 16px 20px; flex: 1; min-width: 140px; }
+.big-val { font-size: 38px; font-weight: 800; line-height: 1; }
+.big-lbl { font-size: 11px; color: #6b7a9e; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.big-sub { font-size: 12px; color: #94a3b8; margin-top: 5px; }
+
+/* ── CRM Pipeline ── */
+.section-lbl { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #6b7a9e; margin-bottom: 10px; }
+.pipeline-wrap { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.pip-pill { background: #1e2335; border: 1px solid #2a3050; border-radius: 10px; padding: 10px 14px; min-width: 78px; text-align: center; flex: 1; }
+.pip-val { font-size: 20px; font-weight: 800; }
+.pip-lbl { font-size: 9px; color: #6b7a9e; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.04em; }
+.pip-pct { font-size: 10px; color: #6b7a9e; margin-top: 1px; }
+
+/* ── Charts ── */
+.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.chart-card { background: #1e2335; border: 1px solid #2a3050; border-radius: 12px; padding: 16px 18px; }
+.chart-title { font-size: 11px; font-weight: 700; color: #94a3b8; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.06em; }
+.bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+.b-lbl { font-size: 11px; color: #94a3b8; width: 100px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.b-track { background: #2a3050; border-radius: 4px; height: 6px; flex: 1; }
+.b-fill { height: 100%; border-radius: 4px; }
+.b-cnt { width: 28px; text-align: right; font-weight: 700; font-size: 12px; flex-shrink: 0; }
+
+/* ── Urgent Section ── */
+.urgent-hdr { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.urgent-dot { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; flex-shrink: 0; }
+.urgent-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #ef4444; }
+.urgent-badge { background: #2a0a0a; color: #ef4444; border: 1px solid #5a1a1a; border-radius: 20px; padding: 2px 12px; font-size: 11px; font-weight: 700; }
+.d-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.d-tab { background: #1e2335; border: 1px solid #2a3050; color: #94a3b8; padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.d-tab:hover { border-color: #4a5a80; color: #e2e8f0; }
+.d-tab.active { background: #fbbf24; border-color: #fbbf24; color: #0f1117; }
+
+/* ── Tables ── */
+.tbl-wrap { background: #1e2335; border: 1px solid #2a3050; border-radius: 12px; overflow: hidden; margin-bottom: 14px; }
+.tbl-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+thead tr { background: #181c27; border-bottom: 1px solid #2a3050; }
+th { padding: 9px 13px; text-align: left; color: #6b7a9e; font-weight: 600; font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
+tbody tr { border-bottom: 1px solid #1a2030; transition: background 0.1s; }
+tbody tr:hover { background: #242d42; }
+td { padding: 8px 13px; vertical-align: middle; }
+.td-id { color: #4f8ef7; font-family: monospace; font-size: 11px; }
+.td-designer { color: #94a3b8; }
+.td-date { color: #94a3b8; font-size: 11px; white-space: nowrap; }
+.td-age { font-weight: 800; font-family: monospace; font-size: 12px; }
+
+/* Status badges */
+.sb { display: inline-block; padding: 2px 9px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.sb-delivered  { background: #071a10; color: #34d399; }
+.sb-indelivery { background: #07101a; color: #4f8ef7; }
+.sb-invoice    { background: #1a1500; color: #fbbf24; }
+.sb-cancelled  { background: #1a0707; color: #ef4444; }
+.sb-return     { background: #1a0f07; color: #f97316; }
+.sb-other      { background: #181c27; color: #94a3b8; }
+
+/* Aging badges */
+.ab { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 700; }
+.ab-over60 { background: #1a0707; color: #ef4444; }
+.ab-60     { background: #1a0e07; color: #f97316; }
+.ab-45     { background: #1a1500; color: #fbbf24; }
+.ab-030    { background: #071a10; color: #34d399; }
+.ab-no     { background: #181c27; color: #6b7a9e; }
+
+/* CRM badge */
+.crm-b { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 600; background: #181c27; }
+
+/* Safe Zone badge */
+.safe-badge { display: inline-block; background: #071a10; color: #34d399; border: 1px solid #1a4a2a; padding: 1px 7px; border-radius: 10px; font-size: 10px; font-weight: 700; margin-left: 4px; vertical-align: middle; }
+
+/* All contracts header */
+.all-hdr { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.all-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #94a3b8; }
+.all-cnt { color: #6b7a9e; font-size: 12px; }
+
+/* Delivery card select */
+.des-sel { background: #181c27; border: 1px solid #2a3050; border-radius: 8px; padding: 6px 10px; color: #e2e8f0; font-size: 11px; outline: none; font-family: inherit; cursor: pointer; width: 100%; margin-top: 8px; }
+
+@media (max-width: 768px) {
+  .dash { padding: 12px; }
+  .charts-grid { grid-template-columns: 1fr; }
+  .kpi-val { font-size: 24px; }
+  .big-val { font-size: 28px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Password Screen -->
+<div id="pwScreen" class="pw-screen">
+  <div class="pw-card">
+    <div class="pw-logo">🏠 KITCHINO</div>
+    <div class="pw-sub">Contracts Follow-up Dashboard</div>
+    <input type="password" id="pwInp" class="pw-input" placeholder="• • • • • • •"
+           onkeydown="if(event.key==='Enter')checkPw()">
+    <button class="pw-btn" onclick="checkPw()">Access Dashboard →</button>
+    <div id="pwErr" class="pw-error">Incorrect password. Please try again.</div>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<div id="dash" class="dash">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo-tag">CONTRACTS</div>
+      <div class="logo-div"></div>
+      <div class="header-title">Follow-up Dashboard</div>
+    </div>
+    <div class="header-right">
+      <input type="text" class="search-inp" id="searchInp"
+             placeholder="🔍 Search customer, order ID, designer…" oninput="applyFilters()">
+      <span class="lbl">Month</span>
+      <select class="month-sel" id="monthSel" onchange="applyFilters()">
+        <option value="">All Months</option>
+      </select>
+      <span class="updated-lbl" id="updLbl">—</span>
+      <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
+    </div>
+  </div>
+
+  <div id="loadingBar" class="loading-bar">Loading contracts data…</div>
+
+  <div id="content" style="display:none">
+
+    <!-- KPI Row 1: Total, Over 60, 45-60, 0-30, Pending -->
+    <div class="kpi-row" id="row1"></div>
+
+    <!-- KPI Row 2: Contract, Invoice, Safe Zone -->
+    <div class="split-row" id="row2"></div>
+
+    <!-- KPI Row 3: Delivered, In Delivery -->
+    <div class="split-row" id="row3"></div>
+
+    <!-- CRM Pipeline -->
+    <div class="section-lbl">CRM STATUS PIPELINE</div>
+    <div class="pipeline-wrap" id="pipeline"></div>
+
+    <!-- Charts 2x2 -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">⏱ Aging Breakdown</div>
+        <div id="agingChart"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">📋 Status Breakdown</div>
+        <div id="statusChart"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">📊 Distribution</div>
+        <div id="crmDistChart"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">👤 Workload by Designer</div>
+        <div id="designerChart"></div>
+      </div>
+    </div>
+
+    <!-- Urgent — Over 60 Days (excluding Safe Zone) -->
+    <div class="urgent-hdr">
+      <div class="urgent-dot"></div>
+      <div class="urgent-title">URGENT — OVER 60 DAYS</div>
+      <div class="urgent-badge" id="urgentBadge">—</div>
+    </div>
+    <div class="d-tabs" id="dTabs"></div>
+    <div class="tbl-wrap">
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr>
+            <th>Order ID</th><th>Client</th><th>Designer</th>
+            <th>Contract Status</th><th>CRM Status</th>
+            <th>Aging</th><th>Contract Date</th><th>Age</th>
+          </tr></thead>
+          <tbody id="urgentTbl"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- All Contracts -->
+    <div class="all-hdr">
+      <div class="all-title">ALL CONTRACTS</div>
+      <div class="all-cnt" id="allCnt"></div>
+    </div>
+    <div class="tbl-wrap">
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr>
+            <th>Order ID</th><th>Client</th><th>Designer</th>
+            <th>Contract Status</th><th>CRM Status</th>
+            <th>Aging</th><th>Contract Date</th><th>Age</th>
+          </tr></thead>
+          <tbody id="allTbl"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /dash -->
+
+<script>
+// ── Config ───────────────────────────────────────────────────────────────
+const SHEET_ID = '1aNmKdJRIQosNpvAwH5CfZUaNZvfZ9yHgoK6yflGi5cA';
+const GID      = '696153871';
+const PW       = 'Kitchino_20200';
+const SAFE_CRM = ['Production','Store','Installation','Delivered'];
+
+const AGING_CLR = {
+  'Over 60 Days':'#ef4444','60 Days':'#f97316',
+  '45 Days':'#fbbf24','0-30 Days':'#34d399','No Date':'#6b7a9e'
+};
+const CRM_CLR = {
+  Contracted:'#a78bfa', Electromechanical:'#60a5fa', Shablona:'#34d399',
+  'Design Working':'#fbbf24', OTO:'#f97316', Auditing:'#94a3b8',
+  Production:'#ef4444', 'Final QC':'#e879f9', Store:'#22d3ee',
+  Recheck:'#fb923c', Shipping:'#4ade80', Installation:'#f59e0b',
+  Delivered:'#34d399', Declined:'#6b7a9e'
+};
+const CRM_ORDER = ['Contracted','Electromechanical','Shablona','Design Working',
+  'OTO','Auditing','Production','Final QC','Store','Recheck',
+  'Shipping','Installation','Delivered','Declined'];
+
+let ALL = [], FILTERED = [], activeDesigner = 'All';
+
+// ── Password ──────────────────────────────────────────────────────────────
+function checkPw() {
+  if (document.getElementById('pwInp').value === PW) {
+    document.getElementById('pwScreen').style.display = 'none';
+    document.getElementById('dash').style.display = 'block';
+    sessionStorage.setItem('kc_auth','1');
+    loadData();
+  } else {
+    document.getElementById('pwErr').style.display = 'block';
+  }
+}
+
+// ── Data Load ─────────────────────────────────────────────────────────────
+function loadData() {
+  document.getElementById('loadingBar').style.display = 'block';
+  document.getElementById('content').style.display = 'none';
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}&t=${Date.now()}`;
+  Papa.parse(url, {
+    download: true, header: true, skipEmptyLines: true,
+    complete(res) {
+      ALL = parse(res.data);
+      buildMonthFilter();
+      applyFilters();
+      document.getElementById('updLbl').textContent = 'Updated ' + new Date().toLocaleTimeString();
+      document.getElementById('loadingBar').style.display = 'none';
+      document.getElementById('content').style.display   = 'block';
+    },
+    error() {
+      document.getElementById('loadingBar').textContent = '⚠ Could not load data. Check sheet permissions.';
+    }
+  });
+}
+
+function parse(rows) {
+  return rows.filter(r => {
+    const id = String(r['Order ID'] || '').trim();
+    return /^\d{5,}/.test(id) || /^OR\d+/i.test(id);
+  }).map(r => {
+    const crm = String(r['CRM Status'] || '').trim();
+    return {
+      name:     String(r['Name'] || '').trim(),
+      orderId:  String(r['Order ID'] || '').trim(),
+      designer: String(r['Designer'] || '').trim(),
+      status:   String(r['Contract Status'] || '').trim(),
+      date:     String(r['Contract Date'] || '').trim(),
+      crm,
+      age:      parseInt(r['Contract Age (Days)']) || 0,
+      aging:    normAging(String(r['Aging Category'] || '')),
+      safe:     SAFE_CRM.includes(crm)
+    };
+  });
+}
+
+function normAging(v) {
+  const l = v.toLowerCase().trim();
+  if (l.includes('over') || l.includes('+')) return 'Over 60 Days';
+  if (l === '60 days' || l === '60')           return '60 Days';
+  if (l === '45 days' || l === '45')           return '45 Days';
+  if (l.includes('30'))                        return '0-30 Days';
+  return 'No Date';
+}
+
+// ── Month Filter ──────────────────────────────────────────────────────────
+function buildMonthFilter() {
+  const months = [...new Set(ALL.map(r => {
+    const d = new Date(r.date); if (isNaN(d)) return null;
+    return d.toLocaleString('en', { month: 'long', year: 'numeric' });
+  }).filter(Boolean))].sort((a,b) => new Date(a)-new Date(b));
+  const sel = document.getElementById('monthSel');
+  sel.innerHTML = '<option value="">All Months</option>' +
+    months.map(m => `<option>${m}</option>`).join('');
+}
+
+function applyFilters() {
+  const s = document.getElementById('searchInp').value.toLowerCase();
+  const m = document.getElementById('monthSel').value;
+  FILTERED = ALL.filter(r => {
+    if (s && !r.name.toLowerCase().includes(s) &&
+        !r.orderId.includes(s) && !r.designer.toLowerCase().includes(s)) return false;
+    if (m) {
+      const d = new Date(r.date); if (isNaN(d)) return false;
+      if (d.toLocaleString('en',{month:'long',year:'numeric'}) !== m) return false;
+    }
+    return true;
+  });
+  render();
+}
+
+// ── Main Render ───────────────────────────────────────────────────────────
+function render() {
+  renderKPIs();
+  renderPipeline();
+  renderCharts();
+  renderUrgent();
+  renderAll();
+}
+
+// ── KPIs ──────────────────────────────────────────────────────────────────
+function renderKPIs() {
+  const d = FILTERED, n = d.length || 1;
+  const over60  = d.filter(r => r.aging === 'Over 60 Days').length;
+  const days60  = d.filter(r => r.aging === '60 Days' || r.aging === '45 Days').length;
+  const days030 = d.filter(r => r.aging === '0-30 Days').length;
+  const pending = d.filter(r => r.status === '' || r.status === 'Contract Pending').length;
+  const safe    = d.filter(r => r.safe).length;
+  const invoices= d.filter(r => r.status === 'فاتورة').length;
+  const contracts=d.filter(r => r.status !== 'فاتورة').length;
+  const delivered=d.filter(r => r.status === 'تم التسليم').length;
+  const inDel   = d.filter(r => r.status === 'قيد التسليم').length;
+  const designers=[...new Set(d.map(r=>r.designer).filter(Boolean))].sort();
+
+  // Row 1
+  document.getElementById('row1').innerHTML = `
+    <div class="kpi bl-blue">
+      <div class="kpi-lbl">Total Sales Orders</div>
+      <div class="kpi-val" style="color:#4f8ef7">${d.length}</div>
+      <div class="kpi-sub">active orders</div>
+    </div>
+    <div class="kpi bl-red">
+      <div class="kpi-lbl"><span class="dot" style="background:#ef4444"></span>Over 60 Days</div>
+      <div class="kpi-val" style="color:#ef4444">${over60}</div>
+      <div class="kpi-sub">${pct(over60,n)}% of total</div>
+    </div>
+    <div class="kpi bl-yel">
+      <div class="kpi-lbl"><span class="dot" style="background:#fbbf24"></span>45 – 60 Days</div>
+      <div class="kpi-val" style="color:#fbbf24">${days60}</div>
+      <div class="kpi-sub">${pct(days60,n)}% of total</div>
+    </div>
+    <div class="kpi bl-grn">
+      <div class="kpi-lbl"><span class="dot" style="background:#34d399"></span>0 – 30 Days</div>
+      <div class="kpi-val" style="color:#34d399">${days030}</div>
+      <div class="kpi-sub">${pct(days030,n)}% of total</div>
+    </div>
+    <div class="kpi bl-pur">
+      <div class="kpi-lbl">Pending</div>
+      <div class="kpi-val" style="color:#a78bfa">${pending}</div>
+      <div class="kpi-sub">not yet signed</div>
+      <div class="kpi-link">Click to view →</div>
+    </div>
+  `;
+
+  // Row 2: Contract, Invoice, Safe Zone
+  document.getElementById('row2').innerHTML = `
+    <div class="big-card bl-grn" style="flex:2;min-width:180px">
+      <div class="big-lbl"><span style="color:#34d399;font-size:14px">●</span> عقد / CONTRACT</div>
+      <div class="big-val" style="color:#34d399">${contracts}</div>
+      <div class="big-sub">${pct(contracts,n)}% of total</div>
+    </div>
+    <div class="big-card bl-yel" style="flex:1;min-width:130px">
+      <div class="big-lbl"><span style="color:#fbbf24;font-size:14px">●</span> فاتورة / INVOICE</div>
+      <div class="big-val" style="color:#fbbf24">${invoices}</div>
+      <div class="big-sub">${pct(invoices,n)}% of total</div>
+    </div>
+    <div class="kpi kpi-safe" style="flex:1;min-width:130px">
+      <div class="kpi-lbl">✅ SAFE ZONE</div>
+      <div class="kpi-val">${safe}</div>
+      <div class="kpi-sub">${pct(safe,n)}% of total</div>
+      <div style="font-size:9px;color:#34d39966;margin-top:5px;line-height:1.4">Production · Store<br>Installation · Delivered</div>
+    </div>
+  `;
+
+  // Row 3: Delivered, In Delivery
+  document.getElementById('row3').innerHTML = `
+    <div class="big-card bl-grn">
+      <div class="big-lbl"><span style="color:#34d399;font-size:14px">●</span> TOTAL DELIVERED</div>
+      <div class="big-val" style="color:#34d399">${delivered}</div>
+      <div class="big-sub">${pct(delivered,n)}% of total contracts</div>
+    </div>
+    <div class="big-card bl-cyan">
+      <div class="big-lbl"><span style="color:#22d3ee;font-size:14px">●</span> IN DELIVERY</div>
+      <div class="big-val" style="color:#22d3ee">${inDel}</div>
+      <div class="big-sub">contracts in active delivery</div>
+      <div style="font-size:10px;color:#6b7a9e;margin-top:10px;letter-spacing:0.06em;text-transform:uppercase">BREAKDOWN BY DESIGNER</div>
+      <select class="des-sel">
+        <option>— Select designer —</option>
+        ${designers.map(d=>`<option>${d}</option>`).join('')}
+      </select>
+    </div>
+  `;
+}
+
+const pct = (a,b) => b ? Math.round(a/b*100) : 0;
+
+// ── CRM Pipeline ──────────────────────────────────────────────────────────
+function renderPipeline() {
+  const n = FILTERED.length || 1;
+  const counts = {};
+  FILTERED.forEach(r => { if(r.crm) counts[r.crm] = (counts[r.crm]||0)+1; });
+  document.getElementById('pipeline').innerHTML = CRM_ORDER.map(name => {
+    const c = counts[name]||0, clr = CRM_CLR[name]||'#94a3b8';
+    return `<div class="pip-pill">
+      <div class="pip-val" style="color:${clr}">${c}</div>
+      <div class="pip-lbl">${name}</div>
+      <div class="pip-pct">${pct(c,n)}%</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Charts ────────────────────────────────────────────────────────────────
+function renderCharts() {
+  const d = FILTERED, n = d.length||1;
+
+  // Aging
+  const aging = {};
+  d.forEach(r => aging[r.aging] = (aging[r.aging]||0)+1);
+  document.getElementById('agingChart').innerHTML =
+    ['Over 60 Days','60 Days','45 Days','0-30 Days','No Date'].map(lbl => {
+      const c=aging[lbl]||0, clr=AGING_CLR[lbl];
+      return barHtml(lbl, c, pct(c,n), clr);
+    }).join('');
+
+  // Status breakdown
+  const st = {};
+  d.forEach(r => st[r.status||'—'] = (st[r.status||'—']||0)+1);
+  const maxSt = Math.max(...Object.values(st),1);
+  document.getElementById('statusChart').innerHTML =
+    Object.entries(st).sort((a,b)=>b[1]-a[1]).map(([l,c]) =>
+      barHtml(l, c, pct(c,maxSt), '#a78bfa')
+    ).join('');
+
+  // CRM Distribution
+  const crm = {};
+  d.forEach(r => { if(r.crm) crm[r.crm]=(crm[r.crm]||0)+1; });
+  const maxCrm = Math.max(...Object.values(crm),1);
+  document.getElementById('crmDistChart').innerHTML =
+    Object.entries(crm).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([l,c]) =>
+      barHtml(l, c, pct(c,maxCrm), CRM_CLR[l]||'#94a3b8')
+    ).join('');
+
+  // Designer workload
+  const des = {};
+  d.forEach(r => { if(r.designer) des[r.designer]=(des[r.designer]||0)+1; });
+  const maxDes = Math.max(...Object.values(des),1);
+  document.getElementById('designerChart').innerHTML =
+    Object.entries(des).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([l,c]) =>
+      barHtml(l, c, pct(c,maxDes), '#4f8ef7')
+    ).join('');
+}
+
+function barHtml(lbl, count, width, color) {
+  return `<div class="bar-row">
+    <div class="b-lbl" title="${lbl}">${lbl}</div>
+    <div class="b-track"><div class="b-fill" style="width:${width}%;background:${color}"></div></div>
+    <div class="b-cnt" style="color:${color}">${count}</div>
+  </div>`;
+}
+
+// ── Urgent Table (Over 60 Days, excluding Safe Zone) ──────────────────────
+function renderUrgent() {
+  // Only Over 60 Days contracts that are NOT in Safe Zone
+  const urgent = FILTERED.filter(r => r.aging === 'Over 60 Days' && !r.safe);
+  document.getElementById('urgentBadge').textContent = `${urgent.length} Contracts Need Follow-up`;
+
+  // Designer tabs
+  const designers = ['All', ...new Set(urgent.map(r=>r.designer).filter(Boolean))].sort((a,b)=>a==='All'?-1:b==='All'?1:a.localeCompare(b));
+  document.getElementById('dTabs').innerHTML = designers.map(d =>
+    `<button class="d-tab ${d===activeDesigner?'active':''}" onclick="setDesigner('${d}')">${d}</button>`
+  ).join('');
+
+  const rows = activeDesigner === 'All' ? urgent : urgent.filter(r => r.designer === activeDesigner);
+  document.getElementById('urgentTbl').innerHTML = rows.length ? rows.map(r => `
+    <tr>
+      <td class="td-id">${r.orderId}</td>
+      <td>${r.name}</td>
+      <td class="td-designer">${r.designer}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td>${r.crm ? `<span class="crm-b" style="color:${CRM_CLR[r.crm]||'#94a3b8'}">${r.crm}</span>` : '—'}</td>
+      <td><span class="ab ab-over60">Over 60 Days</span></td>
+      <td class="td-date">${r.date}</td>
+      <td class="td-age" style="color:#ef4444">${r.age}d</td>
+    </tr>`).join('')
+  : `<tr><td colspan="8" style="text-align:center;color:#6b7a9e;padding:24px">No urgent contracts</td></tr>`;
+}
+
+function setDesigner(d) {
+  activeDesigner = d;
+  renderUrgent();
+}
+
+// ── All Contracts Table ───────────────────────────────────────────────────
+function renderAll() {
+  const d = FILTERED;
+  document.getElementById('allCnt').textContent = d.length + ' contracts';
+  document.getElementById('allTbl').innerHTML = d.slice(0,300).map(r => {
+    const clr = AGING_CLR[r.aging]||'#6b7a9e';
+    const agingBadge = {
+      'Over 60 Days':'ab-over60','60 Days':'ab-60','45 Days':'ab-45','0-30 Days':'ab-030'
+    }[r.aging]||'ab-no';
+    return `<tr>
+      <td class="td-id">${r.orderId}</td>
+      <td>${r.name}</td>
+      <td class="td-designer">${r.designer}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td>
+        ${r.crm ? `<span class="crm-b" style="color:${CRM_CLR[r.crm]||'#94a3b8'}">${r.crm}</span>` : '—'}
+        ${r.safe ? `<span class="safe-badge">✅ Safe Zone</span>` : ''}
+      </td>
+      <td><span class="ab ${agingBadge}">${r.aging}</span></td>
+      <td class="td-date">${r.date}</td>
+      <td class="td-age" style="color:${clr}">${r.age}d</td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="8" style="text-align:center;color:#6b7a9e;padding:24px">No contracts found</td></tr>`;
+}
+
+function statusBadge(s) {
+  if (s === 'تم التسليم')   return `<span class="sb sb-delivered">${s}</span>`;
+  if (s === 'قيد التسليم')  return `<span class="sb sb-indelivery">${s}</span>`;
+  if (s === 'فاتورة')        return `<span class="sb sb-invoice">${s}</span>`;
+  if (s === 'الغاء')         return `<span class="sb sb-cancelled">${s}</span>`;
+  if (s === 'مرتجع')         return `<span class="sb sb-return">${s}</span>`;
+  return `<span class="sb sb-other">${s||'—'}</span>`;
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+window.onload = () => {
+  if (sessionStorage.getItem('kc_auth')) {
+    document.getElementById('pwScreen').style.display = 'none';
+    document.getElementById('dash').style.display = 'block';
+    loadData();
+  }
+};
+</script>
+</body>
+</html>
