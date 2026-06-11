@@ -271,6 +271,8 @@ const SHEET_ID = '1aNmKdJRIQosNpvAwH5CfZUaNZvfZ9yHgoK6yflGi5cA';
 const GID      = '696153871';
 const PW       = 'Kitchino_20200';
 const SAFE_CRM = ['Production','Store','Installation','Delivered'];
+// Stages where contract is still critical (pre-production). Anything after this = not urgent.
+const CRITICAL_CRM = new Set(['contracted','electromechanical','shablona','designer working']);
 
 const AGING_CLR = {
   'Over 60 Days':'#ef4444','60 Days':'#f97316',
@@ -278,12 +280,12 @@ const AGING_CLR = {
 };
 const CRM_CLR = {
   Contracted:'#a78bfa', Electromechanical:'#60a5fa', Shablona:'#34d399',
-  'Design Working':'#fbbf24', OTO:'#f97316', Auditing:'#94a3b8',
+  'Designer Working':'#fbbf24', OTO:'#f97316', Auditing:'#94a3b8',
   Production:'#ef4444', 'Final QC':'#e879f9', Store:'#22d3ee',
   Recheck:'#fb923c', Shipping:'#4ade80', Installation:'#f59e0b',
   Delivered:'#34d399', Declined:'#6b7a9e'
 };
-const CRM_ORDER = ['Contracted','Electromechanical','Shablona','Design Working',
+const CRM_ORDER = ['Contracted','Electromechanical','Shablona','Designer Working',
   'OTO','Auditing','Production','Final QC','Store','Recheck',
   'Shipping','Installation','Delivered','Declined'];
 
@@ -315,13 +317,6 @@ function loadData() {
     .then(csv => {
       const res = Papa.parse(csv, { header: true, skipEmptyLines: true });
       ALL = parse(res.data);
-      console.log('--- SAFE ZONE DEBUG ---');
-      console.log('Total contracts:', ALL.length);
-      console.log('Safe flagged:', ALL.filter(r=>r.safe).length);
-      console.log('Over 60 Days total:', ALL.filter(r=>r.aging==='Over 60 Days').length);
-      console.log('Urgent (Over60 && !safe):', ALL.filter(r=>r.aging==='Over 60 Days'&&!r.safe).length);
-      console.log('Safe contracts sample:', ALL.filter(r=>r.safe).slice(0,5).map(r=>({id:r.orderId,crm:r.crm,crmCode:r.crmCode,safe:r.safe})));
-      console.log('--- END DEBUG ---');
       buildMonthFilter();
       applyFilters();
       document.getElementById('updLbl').textContent = 'Updated ' + new Date().toLocaleTimeString();
@@ -334,18 +329,6 @@ function loadData() {
 }
 
 function parse(rows) {
-  if (rows.length > 0) {
-    console.log('CSV columns:', Object.keys(rows[0]));
-    const sample = rows.find(r => {
-      const keys = Object.keys(r);
-      return keys.some(k => k.toLowerCase().includes('crm'));
-    });
-    if (sample) {
-      const crmKeys = Object.keys(sample).filter(k => k.toLowerCase().includes('crm'));
-      console.log('CRM columns found:', crmKeys);
-      crmKeys.forEach(k => console.log(`  ${k} =`, sample[k]));
-    }
-  }
   return rows.filter(r => {
     const id = String(r['Order ID'] || '').trim();
     return /^\d{5,}/.test(id) || /^OR\d+/i.test(id);
@@ -565,10 +548,14 @@ function barHtml(lbl, count, width, color) {
   </div>`;
 }
 
-// ── Urgent Table (Over 60 Days, excluding Safe Zone) ──────────────────────
+// ── Urgent Table (Over 60 Days, in critical pre-production stages only) ───────
 function renderUrgent() {
-  // Only Over 60 Days contracts that are NOT in Safe Zone
-  const urgent = FILTERED.filter(r => r.aging === 'Over 60 Days' && !r.safe);
+  // Urgent = Over 60 Days AND still in a critical early stage (or no stage yet)
+  const urgent = FILTERED.filter(r => {
+    if (r.aging !== 'Over 60 Days') return false;
+    if (!r.crm) return true; // no CRM stage = still needs follow-up
+    return CRITICAL_CRM.has(r.crm.toLowerCase());
+  });
   document.getElementById('urgentBadge').textContent = `${urgent.length} Contracts Need Follow-up`;
 
   // Designer tabs
