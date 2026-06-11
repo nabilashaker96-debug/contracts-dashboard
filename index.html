@@ -306,7 +306,7 @@ function loadData() {
   document.getElementById('loadingBar').style.display = 'block';
   document.getElementById('loadingBar').textContent = 'Loading…';
   document.getElementById('content').style.display = 'none';
-  const url = `https://docs.google.com/spreadsheets/d/e/2PACX-1vRDlHhCbMO-evGhNLuzXbq66j18meRoGr5fxa-cqu-6KBHO-d-uVJ5zLOv_Lnw2TiU0PVBmRG5nXi2a/pub?gid=${GID}&single=true&output=csv&t=${Date.now()}`;
+  const url = `https://docs.google.com/spreadsheets/d/e/2PACX-1vRDlHhCbM0-evGhNLuzXbq66j18meRoGr5fxa-cqu-6KBHO-d-uVJ5zLOv_Lnw2TiU0PVBmRG5nXi2a/pub?output=csv&gid=${GID}&t=${Date.now()}`;
   fetch(url)
     .then(r => {
       if (!r.ok) throw new Error('HTTP ' + r.status);
