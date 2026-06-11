@@ -315,6 +315,13 @@ function loadData() {
     .then(csv => {
       const res = Papa.parse(csv, { header: true, skipEmptyLines: true });
       ALL = parse(res.data);
+      console.log('--- SAFE ZONE DEBUG ---');
+      console.log('Total contracts:', ALL.length);
+      console.log('Safe flagged:', ALL.filter(r=>r.safe).length);
+      console.log('Over 60 Days total:', ALL.filter(r=>r.aging==='Over 60 Days').length);
+      console.log('Urgent (Over60 && !safe):', ALL.filter(r=>r.aging==='Over 60 Days'&&!r.safe).length);
+      console.log('Safe contracts sample:', ALL.filter(r=>r.safe).slice(0,5).map(r=>({id:r.orderId,crm:r.crm,crmCode:r.crmCode,safe:r.safe})));
+      console.log('--- END DEBUG ---');
       buildMonthFilter();
       applyFilters();
       document.getElementById('updLbl').textContent = 'Updated ' + new Date().toLocaleTimeString();
