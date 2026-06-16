@@ -6589,13 +6589,39 @@ function togglePresMode() {
     if (topbar)  { topbar._pd  = topbar.style.display;  topbar.style.setProperty('display','none','important'); }
     if (wrap)    { wrap._ml = wrap.style.marginLeft; wrap._w = wrap.style.width; wrap.style.marginLeft='0'; wrap.style.width='100vw'; }
     document.body.style.overflow = 'hidden';
+    // Request true OS-level fullscreen (hides browser chrome)
+    const el = document.documentElement;
+    if (el.requestFullscreen) el.requestFullscreen();
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    else if (el.msRequestFullscreen) el.msRequestFullscreen();
   } else {
     if (sidebar) { sidebar.style.removeProperty('display'); if (sidebar._pd) sidebar.style.display = sidebar._pd; }
     if (topbar)  { topbar.style.removeProperty('display');  if (topbar._pd)  topbar.style.display  = topbar._pd; }
     if (wrap)    { wrap.style.marginLeft = wrap._ml||''; wrap.style.width = wrap._w||''; }
     document.body.style.overflow = '';
+    // Exit OS fullscreen
+    if (document.exitFullscreen && document.fullscreenElement) document.exitFullscreen();
+    else if (document.webkitExitFullscreen && document.webkitFullscreenElement) document.webkitExitFullscreen();
   }
 }
+
+// Sync our state if user presses Escape to exit OS fullscreen
+document.addEventListener('fullscreenchange', function() {
+  if (!document.fullscreenElement && _presFullscreen) {
+    _presFullscreen = false;
+    const pg      = document.getElementById('page-presentation');
+    const btn     = document.getElementById('pres-mode-btn');
+    const sidebar = document.querySelector('.sidebar');
+    const topbar  = document.querySelector('.topbar');
+    const wrap    = document.querySelector('.main');
+    if (pg)  pg.classList.remove('pres-fullscreen');
+    if (btn) { btn.textContent = '⛶ Fullscreen'; btn.classList.remove('active'); }
+    if (sidebar) { sidebar.style.removeProperty('display'); if (sidebar._pd) sidebar.style.display = sidebar._pd; }
+    if (topbar)  { topbar.style.removeProperty('display');  if (topbar._pd)  topbar.style.display  = topbar._pd; }
+    if (wrap)    { wrap.style.marginLeft = wrap._ml||''; wrap.style.width = wrap._w||''; }
+    document.body.style.overflow = '';
+  }
+});
 </script>
 </body>
 </html>
